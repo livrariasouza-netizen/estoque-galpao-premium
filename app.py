@@ -15,8 +15,8 @@ st.set_page_config(
 SENHA_ACESSO = "1980"
 NOME_ARQUIVO = "estoque_galpao.json"
 
-# URL OFICIAL E CORRETA DO SEU APLICATIVO PUBLICADO NO STREAMLIT CLOUD
-URL_APLICATIVO = "https://estoquegalpaopremiumwines-3hunxydiuec3wkn7pguqm7.streamlit.app"
+# URL OFICIAL DO SEU APLICATIVO
+URL_APLICATIVO = "https://estoquegalpaopremiumwines-wpktxhltrgjranr6ujp7yi.streamlit.app"
 
 NOME_DEV = "Vagner Souza"
 FONE_DEV = "(31) 98968-4010"
@@ -111,6 +111,26 @@ if not st.session_state.autenticado:
         else:
             st.error("Senha incorreta!")
     st.stop()
+
+# --- VERIFICAÇÃO AUTOMÁTICA VIA QR CODE ---
+# Se o QR Code enviou a informação de um pallet, mostra ele no topo imediatamente
+query_params = st.query_params
+if "pallet" in query_params:
+    pallet_qr = query_params["pallet"]
+    st.info(f"📱 **QR Code Lido!** Mostrando vinhos alocados em: **{pallet_qr}**")
+    
+    vinhos_do_qr = [
+        v for v in st.session_state.estoque
+        if str(v.get("pallet", "")).strip().lower() == str(pallet_qr).strip().lower()
+    ]
+    
+    if vinhos_do_qr:
+        for v in vinhos_do_qr:
+            st.success(f"🍷 **{v.get('nome')}** (Safra: {v.get('safra')}) | Lado: {v.get('lado')} | Caixa: {v.get('caixa')}")
+    else:
+        st.warning(f"Nenhum vinho cadastrado no {pallet_qr} até o momento.")
+    st.markdown("---")
+
 
 # --- TÍTULO E LOGO ---
 col_logo, col_titulo = st.columns([1, 4])
@@ -487,7 +507,7 @@ elif menu == "6. Exportar planilha (CSV)":
 elif menu == "7. Gerar QR Code do Pallet":
     st.header("📱 GERADOR DE ETIQUETAS QR CODE")
     st.write(
-        "Gere QR Codes limpos e seguros para colar nos pallets e acessar o aplicativo com a câmera do celular."
+        "Gere QR Codes inteligentes para colar nos pallets e consultar os vinhos na hora usando a câmera do celular."
     )
 
     c1, c2 = st.columns(2)
@@ -518,12 +538,12 @@ elif menu == "7. Gerar QR Code do Pallet":
     else:
         st.info("ℹ️ NENHUM vinho cadastrado neste pallet no momento.")
 
-    # URL CORRETA DO SEU APLICATIVO REAL
-    link_limpo = URL_APLICATIVO
-    url_qr = f"https://api.qrserver.com/v1/create-qr-code/?size=250x250&data={urllib.parse.quote(link_limpo)}"
+    # AQUI ESTÁ A MÁGICA: Adiciona o parâmetro do Pallet no link do QR Code!
+    link_pallet_especifico = f"{URL_APLICATIVO}/?pallet={urllib.parse.quote(pallet_alvo)}"
+    url_qr = f"https://api.qrserver.com/v1/create-qr-code/?size=250x250&data={urllib.parse.quote(link_pallet_especifico)}"
 
-    st.markdown("### 🖨️ QR Code de Acesso Rápido ao Galpão:")
-    st.image(url_qr, caption=f"QR Code do aplicativo ({pallet_alvo})", width=250)
+    st.markdown("### 🖨️ QR Code de Acesso Direto ao Pallet:")
+    st.image(url_qr, caption=f"Etiqueta QR Code para: {pallet_alvo}", width=250)
     st.caption(
-        "Imprima este QR Code e cole na estrutura do pallet. Ao apontar a câmera do celular, o sistema abrirá diretamente no aplicativo."
+        "Imprima este QR Code e cole no pallet. Ao ler com a câmera do celular, o sistema abrirá mostrando diretamente os vinhos deste pallet!"
     )
